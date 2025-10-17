@@ -6,7 +6,6 @@ const api = axios.create({
   baseURL: API_BASE_URL,
 });
 
-
 // Orders API
 export const ordersAPI = {
   create: (orderData) => api.post('/orders', orderData),
@@ -16,24 +15,31 @@ export const ordersAPI = {
   updateStatus: (orderId, status) => api.put(`/orders/${orderId}/status`, { status }),
 };
 
-// Enhanced Dishes API  
+// Dishes API
 export const dishesAPI = {
   getAll: () => api.get('/dishes'),
   getById: (id) => api.get(`/dishes/${id}`),
 };
 
-// Enhanced Employees API
+// Employees API
 export const employeesAPI = {
   getAll: () => api.get('/employees'),
 };
 
-// Add error interceptor for better error handling
-api.interceptors.response.use(
-  (response) => response,
-  (error) => {
-    console.error('API Error:', error.response?.data || error.message);
-    return Promise.reject(error);
-  }
-);
+// Raw Materials API
+export const rawMaterialsAPI = {
+  getAll: () => api.get('/raw-materials'),
+};
+
+// Analytics API
+export const analyticsAPI = {
+  getSales: (period = 'daily') => api.get(`/analytics/sales?period=${period}`),
+  getProfitMargin: () => api.get('/analytics/profit-margin'),
+  getTopDishes: (limit = 10) => api.get(`/analytics/top-dishes?limit=${limit}`),
+  getInventoryStatus: () => api.get('/analytics/inventory-status'),
+  getOrderSummary: () => api.get('/analytics/order-summary'),
+  getEmployeePerformance: () => api.get('/analytics/employee-performance'),
+  getPaymentAnalytics: () => axios.get(`${API_BASE_URL}/api/analytics/payments`),
+};
 
 export default api;

@@ -20,7 +20,7 @@ node test-db-conenction.js
 
 4. for backend
 cd backend
-
+npm run dev
 
 5. for frontend
 cd frontend

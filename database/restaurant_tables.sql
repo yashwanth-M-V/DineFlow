@@ -87,3 +87,63 @@ CREATE TABLE employee_shifts (
     confirmed BOOLEAN DEFAULT FALSE,
     UNIQUE(employee_id, shift_id)
 );
+
+
+
+
+
+--Updates done to my database 
+-- found that total amount is not added, so adding now using trigger.
+
+-- 1. Add the column
+ALTER TABLE customer_orders ADD COLUMN calculated_total DECIMAL(10,2);
+
+-- 2. Create the trigger function
+CREATE OR REPLACE FUNCTION update_order_total()
+RETURNS TRIGGER AS $$
+DECLARE
+    target_order_id INTEGER;
+BEGIN
+    -- Determine which order_id we're working with
+    IF TG_OP = 'DELETE' THEN
+        target_order_id = OLD.order_id;
+    ELSE
+        target_order_id = NEW.order_id;
+    END IF;
+
+    -- Recalculate total from order_items for this order
+    UPDATE customer_orders 
+    SET calculated_total = (
+        SELECT COALESCE(SUM(quantity * unit_price_at_time), 0)
+        FROM order_items 
+        WHERE order_id = target_order_id
+    )
+    WHERE order_id = target_order_id;
+
+    RETURN COALESCE(NEW, OLD);
+END;
+$$ LANGUAGE plpgsql;
+
+
+
+-- 3. Create triggers
+CREATE TRIGGER order_items_after_insert
+    AFTER INSERT ON order_items
+    FOR EACH ROW EXECUTE FUNCTION update_order_total();
+
+CREATE TRIGGER order_items_after_update
+    AFTER UPDATE ON order_items
+    FOR EACH ROW EXECUTE FUNCTION update_order_total();
+
+CREATE TRIGGER order_items_after_delete
+    AFTER DELETE ON order_items
+    FOR EACH ROW EXECUTE FUNCTION update_order_total();
+
+-- 4. Backfill existing orders
+UPDATE customer_orders 
+SET calculated_total = (
+    SELECT COALESCE(SUM(quantity * unit_price_at_time), 0)
+    FROM order_items 
+    WHERE order_items.order_id = customer_orders.order_id
+);
+
